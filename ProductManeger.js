@@ -1,7 +1,20 @@
+const fs = require('fs');
+
 class ProductManager {
-    constructor() {
+    constructor(path) {
+        this.path = path;
         this.products = [];
         this.nextId = 1;
+
+        if (fs.existsSync(this.path)) {
+            const data = fs.readFileSync(this.path, 'utf-8');
+            this.products = JSON.parse(data);
+            this.nextId = this.products.length ? this.products[this.products.length - 1].id + 1 : 1;
+        }
+    }
+
+    saveToFile() {
+        fs.writeFileSync(this.path, JSON.stringify(this.products, null, 2));
     }
 
     addProduct(product) {
@@ -18,6 +31,11 @@ class ProductManager {
 
         const newProduct = { ...product, id: this.nextId++ };
         this.products.push(newProduct);
+        this.saveToFile();
+    }
+
+    getProducts() {
+        return this.products;
     }
 
     getProductById(id) {
@@ -28,17 +46,26 @@ class ProductManager {
         }
         return product;
     }
+
+    updateProduct(id, updatedProduct) {
+        const index = this.products.findIndex(p => p.id === id);
+        if (index === -1) {
+            console.error("Não encontrado");
+            return;
+        }
+
+        this.products[index] = { ...this.products[index], ...updatedProduct, id };
+        this.saveToFile();
+    }
+
+    deleteProduct(id) {
+        const index = this.products.findIndex(p => p.id === id);
+        if (index === -1) {
+            console.error("Não encontrado");
+            return;
+        }
+
+        this.products.splice(index, 1);
+        this.saveToFile();
+    }
 }
-
-const manager = new ProductManager();
-manager.addProduct({
-    title: "Produto 1",
-    description: "Descrição do Produto 1",
-    price: 100,
-    thumbnail: "caminho/para/imagem1.jpg",
-    code: "P001",
-    stock: 10
-});
-
-console.log(manager.getProductById(1)); 
-console.log(manager.getProductById(2)); 
